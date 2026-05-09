@@ -1,4 +1,4 @@
-# myapp
+# rpt
 
 Please read on, before snapping the "use this repository" button; things are a bit
 different, as this was initially created as our opiniated internal template, in
@@ -88,12 +88,12 @@ Compose merges it on top of `compose.yaml` automatically; no flags needed.
 ## Building the production image
 
 ```bash
-DOCKER_BUILDKIT=1 docker build -t myapp:latest .
-docker run --rm myapp:latest
+DOCKER_BUILDKIT=1 docker build -t rpt:latest .
+docker run --rm rpt:latest
 ```
 
 This also runs automatically in CI on push to `main` and on tagged releases,
-publishing to `ghcr.io/<owner>/myapp`.
+publishing to `ghcr.io/<owner>/rpt`.
 
 ## CI
 

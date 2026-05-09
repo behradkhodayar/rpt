@@ -2,10 +2,10 @@
 #
 # Production image — multi-stage build with cargo-chef for proper layer caching.
 #
-# Build:  DOCKER_BUILDKIT=1 docker build -t myapp:latest .
-# Run:    docker run --rm myapp:latest
+# Build:  DOCKER_BUILDKIT=1 docker build -t rpt:latest .
+# Run:    docker run --rm rpt:latest
 #
-# Replace `myapp` everywhere with your actual binary name (the [[bin]] name
+# Replace `rpt` everywhere with your actual binary name (the [[bin]] name
 # from Cargo.toml, or your package name if it's a single-binary crate).
 
 # =============================================================================
@@ -46,7 +46,7 @@ RUN cargo chef cook --release --recipe-path recipe.json
 # Now copy the actual source and build the app.
 # Because deps are already compiled, this step only rebuilds your own code.
 COPY . .
-RUN cargo build --release --bin myapp
+RUN cargo build --release --bin rpt
 
 # =============================================================================
 # Stage 4: runtime — minimal image, just the binary
@@ -64,7 +64,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --create-home --shell /bin/bash --uid 1001 app
 
-COPY --from=builder /app/target/release/myapp /usr/local/bin/myapp
+COPY --from=builder /app/target/release/rpt /usr/local/bin/rpt
 
 USER app
 WORKDIR /home/app
@@ -73,4 +73,4 @@ WORKDIR /home/app
 # you still need `-p 8080:8080` when running it).
 # EXPOSE 8080
 
-ENTRYPOINT ["myapp"]
+ENTRYPOINT ["rpt"]

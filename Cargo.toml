@@ -2,7 +2,7 @@
 # After "Use this template", run ./_setup.sh <your-name> to substitute
 # this placeholder with your actual project name in Cargo.toml, Dockerfile,
 # and README.md.
-name = "myapp"
+name = "rpt"
 version = "0.1.0"
 edition = "2021"
 
@@ -10,7 +10,7 @@ edition = "2021"
 # authors = ["Your Name <you@example.com>"]
 # description = "One-line description of what this binary does."
 # license = "MIT"
-# repository = "https://github.com/your-org/myapp"
+# repository = "https://github.com/your-org/rpt"
 
 [dependencies]
 # Add deps with `cargo add <crate>` from inside the dev container.
