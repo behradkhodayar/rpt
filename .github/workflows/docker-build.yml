@@ -1,0 +1,72 @@
+name: Build production image
+
+# Builds the project's production Dockerfile (multi-stage with cargo-chef)
+# and publishes to ghcr.io/<owner>/<repo> on pushes to main and tagged releases.
+#
+# On pull requests, builds but does not push — gives you an early warning
+# if a PR breaks the production build, without polluting the registry.
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+concurrency:
+  group: docker-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write   # to push to GHCR
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        # Skip login on PRs — they shouldn't need to push, and PRs from forks
+        # don't have access to packages: write anyway.
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          # Result examples:
+          #   - main branch:   :main, :sha-abc1234
+          #   - PR #42:        :pr-42, :sha-abc1234  (built only, not pushed)
+          #   - tag v1.2.3:    :1.2.3, :1.2, :1, :latest
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,prefix=sha-,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # GitHub Actions cache backend — caches BuildKit layers across runs.
+          # `mode=max` caches all stages of the multi-stage build, not just
+          # the final one. This is the difference between "rebuild deps every
+          # CI run" and "rebuild only what changed."
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

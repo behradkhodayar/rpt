@@ -1,0 +1,70 @@
+# Per-developer overrides for the dev container.
+#
+# HOW TO USE:
+#   1. Copy this file:           cp compose.override.yaml.example compose.override.yaml
+#   2. Edit to taste.
+#   3. Docker Compose automatically merges it on top of compose.yaml.
+#
+# compose.override.yaml is in .gitignore — your changes are local only.
+# This .example file IS committed, as documentation of available patterns.
+#
+# ---------------------------------------------------------------
+# Compose merge semantics in 30 seconds:
+#   - Scalars (strings, numbers): override file's value wins
+#   - Lists (volumes, ports, environment-as-list): the two are concatenated
+#   - Maps (environment-as-map): keys are merged, override wins on collisions
+# So `volumes:` here ADDS to the volumes in compose.yaml, doesn't replace them.
+# ---------------------------------------------------------------
+
+services:
+  dev:
+    # ---- Personal env vars ----
+    # As a map (preferred for overrides) — these get merged with the base file.
+    environment:
+      RUST_LOG: debug
+      RUST_BACKTRACE: full           # overrides the "1" in compose.yaml
+      # GITHUB_TOKEN: ...            # if a build script needs it; prefer .env
+      # DATABASE_URL: postgres://...
+
+    # ---- Personal mounts ----
+    # Common patterns:
+    volumes:
+      # Make git inside the container know who you are. Read-only, so the
+      # container can't accidentally clobber your host config.
+      - ~/.gitconfig:/home/dev/.gitconfig:ro
+
+      # SSH keys, e.g. for `cargo` accessing private git deps.
+      # NOTE: this exposes your keys to anything inside the container, including
+      # any malicious crate's build.rs. Only enable if you actually need it,
+      # and consider using a separate, scoped key.
+      # - ~/.ssh:/home/dev/.ssh:ro
+
+      # Personal scratch dir, e.g. for ad-hoc experiments.
+      # - ~/scratch:/scratch
+
+      # Mount a personal cargo config — useful for personal registry mirrors,
+      # custom build flags, or to override the team default.
+      # - ~/.cargo/config.toml:/usr/local/cargo/config.toml:ro
+
+    # ---- Extra ports ----
+    # The base compose.yaml has ports: commented out. If you uncomment ports
+    # there, anything you add here will be ADDED (lists are concatenated).
+    # ports:
+    #   - "9000:9000"   # personal debugging tool
+    #   - "127.0.0.1:5005:5005"  # bind to loopback only — safer
+
+    # ---- Resource limits ----
+    # Useful if you have lots of cores/RAM and want to leave headroom for
+    # other work, or vice versa. These are runtime hints to Docker, not hard
+    # guarantees on all platforms.
+    # mem_limit: 8g
+    # cpus: 4.0
+
+    # ---- Override the dev image entirely ----
+    # E.g. if you're testing a personal fork of base-image with extra tools:
+    # image: my-rust-dev:experimental
+
+    # ---- Run as a different user ----
+    # E.g. if your host UID isn't 1000 and you didn't rebuild the base image
+    # with --build-arg USER_UID=$(id -u). Quick fix without a rebuild:
+    # user: "${UID}:${GID}"

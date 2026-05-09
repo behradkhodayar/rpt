@@ -1,0 +1,82 @@
+name: CI
+
+# Runs fmt, clippy, tests, and audit inside the SAME image developers use
+# locally — so "works on my machine" should mean it works in CI too.
+#
+# The image is pulled from ghcr.io/<owner>/rust-dev:stable, where <owner>
+# is whoever owns this repo. That image is published by the
+# rust-docker-template repo's own publish-base-image.yml workflow.
+#
+# If the image is private (default for new GHCR packages), the GITHUB_TOKEN
+# in this workflow needs `packages: read` permission, which is set below.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Cancel superseded runs on the same ref (e.g. when you push twice quickly).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  # Make build failures fail loudly with backtraces.
+  RUST_BACKTRACE: 1
+
+jobs:
+  test:
+    name: Test, lint, format
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: read   # to pull the dev image from GHCR
+
+    container:
+      image: ghcr.io/${{ github.repository_owner }}/rust-dev:stable
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      # Run as root inside the container. The base image's default `dev`
+      # user has UID 1000, but the GitHub-mounted workspace is owned by
+      # the runner user (UID 1001), which causes permission errors.
+      # Running as root in CI is fine — bind-mount UID matching only
+      # matters for local dev.
+      options: --user root
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Cache the cargo registry, git deps, and target/ between runs.
+      # Keyed on Cargo.lock so any dep change invalidates it; restore-keys
+      # gives a partial-match fallback so we don't start from zero.
+      - name: Cache cargo & target
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/cargo/registry
+            /usr/local/cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Format check
+        run: cargo fmt --all --check
+
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Tests
+        run: cargo nextest run --all-features
+
+      # cargo-audit reads the GitHub advisory DB. It's allowed to fail the
+      # build for a known vuln, but we mark continue-on-error: true so a
+      # transient registry hiccup doesn't block PRs. Flip to false if you
+      # want strict gating.
+      - name: Audit dependencies
+        run: cargo audit
+        continue-on-error: true

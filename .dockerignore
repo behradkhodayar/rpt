@@ -1,0 +1,42 @@
+# Keep the docker build context small and the cache valid.
+# Anything in here is NOT sent to the Docker daemon during builds.
+
+# Build artifacts — must not be in the build context, or `cargo chef cook`
+# misbehaves and `target/` gets shipped to the daemon (multi-GB upload).
+target/
+**/target/
+
+# Dev-only files
+.devcontainer/
+.vscode/
+.idea/
+
+# VCS
+.git/
+.gitignore
+.gitattributes
+
+# OS / editor noise
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Logs and local state
+*.log
+*.pid
+
+# Env files — these often contain secrets and shouldn't be baked into images.
+# Override per-project if you actually want to bake one in.
+.env
+.env.*
+!.env.example
+
+# Compose state
+compose.yaml
+compose.override.yaml
+docker-compose.yaml
+docker-compose.override.yaml
+
+# This file itself
+.dockerignore

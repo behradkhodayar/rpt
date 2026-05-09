@@ -1,0 +1,55 @@
+{
+    // VS Code Dev Containers config.
+    // Docs: https://containers.dev/implementors/json_reference/
+    //
+    // Open this folder in VS Code, then Command Palette →
+    // "Dev Containers: Reopen in Container".
+
+    "name": "Rust Dev",
+
+    // Use the project's compose.yaml as the source of truth.
+    // VS Code will start the `dev` service and attach to it.
+    "dockerComposeFile": "../compose.yaml",
+    "service": "dev",
+    "workspaceFolder": "/workspace",
+
+    // Run as the non-root `dev` user (UID/GID match host, set in base image).
+    "remoteUser": "dev",
+
+    // Don't tear down the container when VS Code disconnects — we want
+    // `docker compose exec` to still work from a separate terminal.
+    "shutdownAction": "none",
+
+    "customizations": {
+        "vscode": {
+            // Extensions installed INSIDE the container, not on the host.
+            // Each project can pin a different set if it wants to.
+            "extensions": [
+                "rust-lang.rust-analyzer",
+                "tamasfe.even-better-toml",
+                "vadimcn.vscode-lldb",
+                "serayuzgur.crates",
+                "usernamehw.errorlens"
+            ],
+
+            "settings": {
+                // Use clippy instead of plain `cargo check` for diagnostics.
+                "rust-analyzer.check.command": "clippy",
+
+                // Tell rust-analyzer to use a separate target dir, so its
+                // background `cargo check` runs don't fight with your
+                // foreground `cargo build`/`cargo test` runs over file locks.
+                "rust-analyzer.cargo.targetDir": true,
+
+                // Format on save with rustfmt.
+                "[rust]": {
+                    "editor.formatOnSave": true,
+                    "editor.defaultFormatter": "rust-lang.rust-analyzer"
+                },
+
+                // Default terminal to bash (matches the base image).
+                "terminal.integrated.defaultProfile.linux": "bash"
+            }
+        }
+    }
+}

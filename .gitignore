@@ -1,0 +1,39 @@
+# --- Rust ---
+/target
+**/*.rs.bk
+
+# Keep Cargo.lock in version control for binaries/applications (recommended).
+# If this project is a library, uncomment the next line:
+# Cargo.lock
+
+# --- Docker / Compose ---
+# Per-developer overrides — the .example file IS committed.
+compose.override.yaml
+compose.override.yml
+
+# --- Environment ---
+# Dotenv files often contain secrets. .env.example is the committed template.
+.env
+.env.local
+.env.*.local
+
+# --- IDEs ---
+.idea/
+*.iml
+# Don't ignore .vscode entirely — devcontainer.json lives there if you ever
+# move it from .devcontainer/. But ignore personal user settings.
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
+
+# --- OS noise ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# --- Logs ---
+*.log

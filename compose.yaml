@@ -1,0 +1,65 @@
+# Dev container for this project.
+#
+# Run:        docker compose up -d
+# Shell in:   docker compose exec dev bash
+# Stop:       docker compose down
+#
+# Per-developer customizations: copy compose.override.yaml.example to
+# compose.override.yaml and edit. compose.override.yaml is gitignored —
+# Docker Compose merges it on top of this file automatically.
+#
+# VS Code's Dev Containers extension uses this file too — see .devcontainer/devcontainer.json.
+
+services:
+  dev:
+    # Image source:
+    #   - Locally: leave RUST_DEV_IMAGE unset → uses the local rust-dev:stable
+    #     you built with base-image/build.sh. Fast iteration, full control.
+    #   - In CI:   RUST_DEV_IMAGE=ghcr.io/<owner>/rust-dev:stable, pulled from
+    #     the registry (published by the template repo's CI).
+    image: ${RUST_DEV_IMAGE:-rust-dev:stable}
+    working_dir: /workspace
+    init: true                      # proper PID 1 / signal handling
+    command: sleep infinity         # keep the container alive for exec/attach
+
+    volumes:
+      # ---- Source code: bind mount ----
+      # Edits on the host appear instantly inside the container.
+      # `:cached` is a hint that the host is the authoritative source for files
+      # (a no-op on Linux, a perf win on macOS — harmless to keep here).
+      - .:/workspace:cached
+
+      # ---- target/: NAMED VOLUME, not a bind mount ----
+      # `target/` is huge, change-heavy, and benefits from being on Docker's
+      # native filesystem rather than the host bind mount. Auto-named per
+      # project. Delete with `docker volume rm <name>` if needed.
+      - target-cache:/workspace/target
+
+      # ---- Cargo registry & git caches: SHARED across all projects ----
+      # Same volume names everywhere → every project on this machine
+      # sees the same downloaded crate sources. Download serde once, ever.
+      - cargo-registry:/usr/local/cargo/registry
+      - cargo-git:/usr/local/cargo/git
+
+    environment:
+      RUST_BACKTRACE: "1"
+      CARGO_TERM_COLOR: always
+      # Use lld (installed in the base image) for faster linking.
+      # Comment out if you hit weird linker errors on a particular crate.
+      RUSTFLAGS: "-C link-arg=-fuse-ld=lld"
+
+    # If your app exposes a port for local testing, declare it here.
+    # ports:
+    #   - "8080:8080"
+
+volumes:
+  # Per-project — gets the compose project name prefixed automatically.
+  target-cache:
+
+  # Shared across ALL projects on this machine. The `name:` makes the volume
+  # name literal (no project prefix), so every compose file in every project
+  # mounts the exact same volume.
+  cargo-registry:
+    name: cargo-registry
+  cargo-git:
+    name: cargo-git

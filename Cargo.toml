@@ -1,0 +1,22 @@
+[package]
+# After "Use this template", run ./_setup.sh <your-name> to substitute
+# this placeholder with your actual project name in Cargo.toml, Dockerfile,
+# and README.md.
+name = "myapp"
+version = "0.1.0"
+edition = "2021"
+
+# Uncomment and fill in once you publish:
+# authors = ["Your Name <you@example.com>"]
+# description = "One-line description of what this binary does."
+# license = "MIT"
+# repository = "https://github.com/your-org/myapp"
+
+[dependencies]
+# Add deps with `cargo add <crate>` from inside the dev container.
+
+[profile.release]
+# Sensible defaults for production binaries:
+lto = "thin"            # link-time optimization, big perf win for small build cost
+codegen-units = 1       # better optimization at the expense of slower compile
+strip = "symbols"       # smaller binary
